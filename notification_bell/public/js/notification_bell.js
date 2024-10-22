@@ -400,8 +400,8 @@ class NotificationsView extends BaseNotificationsView {
 
     setup_notification_listeners() {
         frappe.realtime.on("notification", () => {
-            this.toggle_notification_icon(false);
-            this.update_dropdown();
+$1this.update_dropdown();
+            this.display_unread_count();
         });
 
         frappe.realtime.on("indicator_hide", () => {
