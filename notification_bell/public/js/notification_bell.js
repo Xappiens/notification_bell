@@ -181,238 +181,245 @@ class BaseNotificationsView {
 }
 
 class NotificationsView extends BaseNotificationsView {
-	make() {
-		this.notifications_icon = this.parent.find(".notifications-icon");
-		this.notifications_icon
-			.attr("title", __("Notifications"))
-			.tooltip({ delay: { show: 600, hide: 100 }, trigger: "hover" });
+    make() {
+        this.notifications_icon = this.parent.find(".notifications-icon");
+        this.notifications_icon
+            .attr("title", __("Notifications"))
+            .tooltip({ delay: { show: 600, hide: 100 }, trigger: "hover" });
 
-		this.setup_notification_listeners();
-		this.createUnreadCountElement();
-		this.applyUnreadCountStyles();
+        this.setup_notification_listeners();
+        this.createUnreadCountElement();
+        this.applyUnreadCountStyles();
 
-		this.get_notifications_list(this.max_length).then((r) => {
-			if (!r.message) return;
-			this.dropdown_items = r.message.notification_logs;
-			frappe.update_user_info(r.message.user_info);
-			this.render_notifications_dropdown();
-			this.display_unread_count(); // add this line
-		});
-	}
+        this.get_notifications_list(this.max_length).then((r) => {
+            if (!r.message) return;
+            this.dropdown_items = r.message.notification_logs;
+            frappe.update_user_info(r.message.user_info);
+            this.render_notifications_dropdown();
+            this.display_unread_count();
+        });
+    }
 
-	createUnreadCountElement() {
-		this.unreadCountElement = document.createElement('span');
-		this.unreadCountElement.classList.add('unread-count');
-		this.notifications_icon[0].appendChild(this.unreadCountElement);
-	}
+    createUnreadCountElement() {
+        this.unreadCountElement = document.createElement('span');
+        this.unreadCountElement.classList.add('unread-count');
+        this.notifications_icon[0].appendChild(this.unreadCountElement);
+    }
 
-	applyUnreadCountStyles() {
-		$(this.unreadCountElement).css({
-			"position": "absolute",
-			"top": "-10px",
-			"right": "-10px",
-			"background-color": "red",
-			"color": "white",
-			"border-radius": "50%",
-			"padding": "2px 6px",
-			"font-size": "12px",
-			"font-weight": "bold",
-			"display": "none"
-		});
-	}
+    applyUnreadCountStyles() {
+        $(this.unreadCountElement).css({
+            "position": "absolute",
+            "top": "-10px",
+            "right": "-10px",
+            "background-color": "red",
+            "color": "white",
+            "border-radius": "50%",
+            "padding": "2px 6px",
+            "font-size": "12px",
+            "font-weight": "bold",
+            "display": "none"
+        });
+    }
 
-	display_unread_count() {
-		let unreadCount = this.dropdown_items.filter(item => !item.read).length;
-		if (unreadCount > 0) {
-			$(this.unreadCountElement).text(unreadCount).css("display", "block");
-		} else {
-			$(this.unreadCountElement).css("display", "none");
-		}
-	}
+    display_unread_count() {
+        let unreadCount = this.dropdown_items.filter(item => !item.read).length;
+        if (unreadCount > 0) {
+            $(this.unreadCountElement).text(unreadCount).css("display", "block");
+        } else {
+            $(this.unreadCountElement).css("display", "none");
+        }
+    }
 
-	update_dropdown() {
-		this.get_notifications_list(1).then((r) => {
-			if (!r.message) return;
-			let new_item = r.message.notification_logs[0];
-			frappe.update_user_info(r.message.user_info);
-			this.dropdown_items.unshift(new_item);
-			if (this.dropdown_items.length > this.max_length) {
-				this.container.find(".recent-notification").last().remove();
-				this.dropdown_items.pop();
-			}
+    update_dropdown() {
+        this.get_notifications_list(1).then((r) => {
+            if (!r.message) return;
+            let new_item = r.message.notification_logs[0];
+            frappe.update_user_info(r.message.user_info);
+            this.dropdown_items.unshift(new_item);
+            if (this.dropdown_items.length > this.max_length) {
+                this.container.find(".recent-notification").last().remove();
+                this.dropdown_items.pop();
+            }
 
-			this.insert_into_dropdown();
-			this.display_unread_count()
-		});
-	}
+            this.insert_into_dropdown();
+            this.display_unread_count();
+        });
+    }
 
-	change_activity_status() {
-		if (this.container.find(".activity-status")) {
-			this.container.find(".activity-status").replaceWith(
-				`<a class="recent-item text-center text-muted"
-					href="/app/List/Notification Log">
-					<div class="full-log-btn">${__("View Full Log")}</div>
-				</a>`
-			);
-		}
-	}
+    change_activity_status() {
+        if (this.container.find(".activity-status")) {
+            this.container.find(".activity-status").replaceWith(
+                `<a class="recent-item text-center text-muted"
+                    href="/app/List/Notification Log">
+                    <div class="full-log-btn">${__("View Full Log")}</div>
+                </a>`
+            );
+        }
+    }
 
-	mark_as_read(docname, $el) {
-		frappe
-			.call("frappe.desk.doctype.notification_log.notification_log.mark_as_read", {
-				docname: docname,
-			})
-			.then(() => {
-				$el.removeClass("unread");
-				this.display_unread_count()
-			});
-	}
+    mark_as_read(docname, $el) {
+        frappe
+            .call("frappe.desk.doctype.notification_log.notification_log.mark_as_read", {
+                docname: docname,
+            })
+            .then(() => {
+                $el.removeClass("unread");
+                this.dropdown_items = this.dropdown_items.map(item => {
+                    if (item.name === docname) {
+                        item.read = true;
+                    }
+                    return item;
+                });
+                this.display_unread_count();
+            });
+    }
 
-	insert_into_dropdown() {
-		let new_item = this.dropdown_items[0];
-		let new_item_html = this.get_dropdown_item_html(new_item);
-		$(new_item_html).prependTo(this.container);
-		this.change_activity_status();
-	}
+    insert_into_dropdown() {
+        let new_item = this.dropdown_items[0];
+        let new_item_html = this.get_dropdown_item_html(new_item);
+        $(new_item_html).prependTo(this.container);
+        this.change_activity_status();
+    }
 
-	get_dropdown_item_html(notification_log) {
-		let doc_link = this.get_item_link(notification_log);
+    get_dropdown_item_html(notification_log) {
+        let doc_link = this.get_item_link(notification_log);
 
-		let read_class = notification_log.read ? "" : "unread";
-		let message = notification_log.subject;
+        let read_class = notification_log.read ? "" : "unread";
+        let message = notification_log.subject;
 
-		let title = message.match(/<b class="subject-title">(.*?)<\/b>/);
-		message = title
-			? message.replace(title[1], frappe.ellipsis(strip_html(title[1]), 100))
-			: message;
+        let title = message.match(/<b class="subject-title">(.*?)<\/b>/);
+        message = title
+            ? message.replace(title[1], frappe.ellipsis(strip_html(title[1]), 100))
+            : message;
 
-		let timestamp = frappe.datetime.comment_when(notification_log.creation);
-		let message_html = `<div class="message">
-			<div>${message}</div>
-			<div class="notification-timestamp text-muted">
-				${timestamp}
-			</div>
-		</div>`;
+        let timestamp = frappe.datetime.comment_when(notification_log.creation);
+        let message_html = `<div class="message">
+            <div>${message}</div>
+            <div class="notification-timestamp text-muted">
+                ${timestamp}
+            </div>
+        </div>`;
 
-		let user = notification_log.from_user;
-		let user_avatar = frappe.avatar(user, "avatar-medium user-avatar");
+        let user = notification_log.from_user;
+        let user_avatar = frappe.avatar(user, "avatar-medium user-avatar");
 
-		let item_html = $(`<a class="recent-item notification-item ${read_class}"
-				href="${doc_link}"
-				data-name="${notification_log.name}"
-			>
-				<div class="notification-body">
-					${user_avatar}
-					${message_html}
-				</div>
-				<div class="mark-as-read" title="${__("Mark as Read")}">
-				</div>
-			</a>`);
+        let item_html = $(`<a class="recent-item notification-item ${read_class}"
+                href="${doc_link}"
+                data-name="${notification_log.name}"
+            >
+                <div class="notification-body">
+                    ${user_avatar}
+                    ${message_html}
+                </div>
+                <div class="mark-as-read" title="${__("Mark as Read")}">
+                </div>
+            </a>`);
 
-		if (!notification_log.read) {
-			let mark_btn = item_html.find(".mark-as-read");
-			mark_btn.tooltip({ delay: { show: 600, hide: 100 }, trigger: "hover" });
-			mark_btn.on("click", (e) => {
-				e.preventDefault();
-				e.stopImmediatePropagation();
-				this.mark_as_read(notification_log.name, item_html);
-			});
-		}
+        if (!notification_log.read) {
+            let mark_btn = item_html.find(".mark-as-read");
+            mark_btn.tooltip({ delay: { show: 600, hide: 100 }, trigger: "hover" });
+            mark_btn.on("click", (e) => {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+                this.mark_as_read(notification_log.name, item_html);
+            });
+        }
 
-		item_html.on("click", () => {
-			!notification_log.read && this.mark_as_read(notification_log.name, item_html);
-			this.notifications_icon.trigger("click");
-		});
+        item_html.on("click", () => {
+            !notification_log.read && this.mark_as_read(notification_log.name, item_html);
+            this.notifications_icon.trigger("click");
+        });
 
-		return item_html;
-	}
+        return item_html;
+    }
 
-	render_notifications_dropdown() {
-		if (this.settings && !this.settings.enabled) {
-			this.container.html(`<li class="recent-item notification-item">
-				<span class="text-muted">
-					${__("Notifications Disabled")}
-				</span></li>`);
-		} else {
-			if (this.dropdown_items.length) {
-				this.container.empty();
-				this.dropdown_items.forEach((notification_log) => {
-					this.container.append(this.get_dropdown_item_html(notification_log));
-				});
-				this.container.append(`<a class="list-footer"
-					href="/app/List/Notification Log">
-						<div class="full-log-btn">${__("See all Activity")}</div>
-					</a>`);
-			} else {
-				this.container.append(
-					$(`<div class="notification-null-state">
-					<div class="text-center">
-						<img src="/assets/frappe/images/ui-states/notification-empty-state.svg" alt="Generic Empty State" class="null-state">
-						<div class="title">${__("No New notifications")}</div>
-						<div class="subtitle">
-							${__("Looks like you haven’t received any notifications.")}
-					</div></div></div>`)
-				);
-			}
-		}
-	}
+    render_notifications_dropdown() {
+        if (this.settings && !this.settings.enabled) {
+            this.container.html(`<li class="recent-item notification-item">
+                <span class="text-muted">
+                    ${__("Notifications Disabled")}
+                </span></li>`);
+        } else {
+            if (this.dropdown_items.length) {
+                this.container.empty();
+                this.dropdown_items.forEach((notification_log) => {
+                    this.container.append(this.get_dropdown_item_html(notification_log));
+                });
+                this.container.append(`<a class="list-footer"
+                    href="/app/List/Notification Log">
+                        <div class="full-log-btn">${__("See all Activity")}</div>
+                    </a>`);
+            } else {
+                this.container.append(
+                    $(`<div class="notification-null-state">
+                    <div class="text-center">
+                        <img src="/assets/frappe/images/ui-states/notification-empty-state.svg" alt="Generic Empty State" class="null-state">
+                        <div class="title">${__("No New notifications")}</div>
+                        <div class="subtitle">
+                            ${__("Looks like you haven’t received any notifications.")}
+                    </div></div></div>`)
+                );
+            }
+        }
+    }
 
-	get_notifications_list(limit) {
-		return frappe.call(
-			"frappe.desk.doctype.notification_log.notification_log.get_notification_logs",
-			{ limit: limit }
-		);
-	}
+    get_notifications_list(limit) {
+        return frappe.call(
+            "frappe.desk.doctype.notification_log.notification_log.get_notification_logs",
+            { limit: limit }
+        );
+    }
 
-	get_item_link(notification_doc) {
-		if (notification_doc.link) {
-			return notification_doc.link;
-		}
-		const link_doctype = notification_doc.document_type
-			? notification_doc.document_type
-			: "Notification Log";
-		const link_docname = notification_doc.document_name
-			? notification_doc.document_name
-			: notification_doc.name;
-		return frappe.utils.get_form_link(link_doctype, link_docname);
-	}
+    get_item_link(notification_doc) {
+        if (notification_doc.link) {
+            return notification_doc.link;
+        }
+        const link_doctype = notification_doc.document_type
+            ? notification_doc.document_type
+            : "Notification Log";
+        const link_docname = notification_doc.document_name
+            ? notification_doc.document_name
+            : notification_doc.name;
+        return frappe.utils.get_form_link(link_doctype, link_docname);
+    }
 
-	toggle_notification_icon(seen) {
-		this.notifications_icon.find(".notifications-seen").toggle(seen);
-		this.notifications_icon.find(".notifications-unseen").toggle(!seen);
-	}
+    toggle_notification_icon(seen) {
+        this.notifications_icon.find(".notifications-seen").toggle(seen);
+        this.notifications_icon.find(".notifications-unseen").toggle(!seen);
+    }
 
-	toggle_seen(flag) {
-		frappe.call(
-			"frappe.desk.doctype.notification_settings.notification_settings.set_seen_value",
-			{
-				value: cint(flag),
-				user: frappe.session.user,
-			}
-		);
-	}
+    toggle_seen(flag) {
+        frappe.call(
+            "frappe.desk.doctype.notification_settings.notification_settings.set_seen_value",
+            {
+                value: cint(flag),
+                user: frappe.session.user,
+            }
+        );
+    }
 
-	setup_notification_listeners() {
-		frappe.realtime.on("notification", () => {
-			this.toggle_notification_icon(false);
-			this.update_dropdown();
-		});
+    setup_notification_listeners() {
+        frappe.realtime.on("notification", () => {
+            this.toggle_notification_icon(false);
+            this.update_dropdown();
+        });
 
-		frappe.realtime.on("indicator_hide", () => {
-			this.toggle_notification_icon(true);
-		});
+        frappe.realtime.on("indicator_hide", () => {
+            this.toggle_notification_icon(true);
+        });
 
-		this.parent.on("show.bs.dropdown", () => {
-			this.toggle_seen(true);
-			if (this.notifications_icon.find(".notifications-unseen").is(":visible")) {
-				this.toggle_notification_icon(true);
-				frappe.call(
-					"frappe.desk.doctype.notification_log.notification_log.trigger_indicator_hide"
-				);
-			}
-		});
-	}
+        this.parent.on("show.bs.dropdown", () => {
+            this.toggle_seen(true);
+            if (this.notifications_icon.find(".notifications-unseen").is(":visible")) {
+                this.toggle_notification_icon(true);
+                frappe.call(
+                    "frappe.desk.doctype.notification_log.notification_log.trigger_indicator_hide"
+                );
+            }
+        });
+    }
 }
+
 
 class EventsView extends BaseNotificationsView {
 	make() {
