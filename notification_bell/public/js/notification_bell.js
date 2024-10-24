@@ -166,7 +166,7 @@ class BaseNotificationsView {
 		this.wrapper = wrapper;
 		this.parent = parent;
 		this.settings = settings;
-		this.max_length = 20;
+		this.max_length = 100;
 		this.container = $(`<div></div>`).appendTo(this.wrapper);
 		this.make();
 	}
