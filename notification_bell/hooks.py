@@ -242,4 +242,6 @@ app_license = "mit"
 # 	"Logging DocType Name": 30  # days to retain logs
 # }
 
-app_include_js = "/assets/notification_bell/js/notification_bel.js"
+app_include_js = ["/assets/notification_bell/js/notification_bell.js"]
+
+doctype_js = {"Notification Log" : "/public/js/notification_log.js"}
