@@ -113,19 +113,33 @@ frappe.ui.Notifications = class Notifications {
 
 	mark_all_as_read(e) {
 		e.stopImmediatePropagation();
+		const _this = this;  // Guarda la referencia al contexto de `this`
+	
 		frappe.call({
 			method: "frappe.desk.doctype.notification_log.notification_log.mark_all_as_read",
 			callback: function(r) {
 				if (!r.exc) {
 					console.log("Todas las notificaciones se han marcado como leídas.");
-					this.dropdown_list.find(".unread").removeClass("unread");
-					this.update_dropdown();  // Refresca la lista para asegurarse de que los cambios se reflejen
+					_this.dropdown_list.find(".unread").removeClass("unread");
+					
+					// Refresca la lista para asegurarse de que los cambios se reflejen
+					_this.update_dropdown();  
+					console.log("Se ha actualizado la lista de notificaciones.");
 				} else {
 					console.error("Error al marcar las notificaciones como leídas:", r.exc);
 				}
-			}.bind(this)
+			}
 		});
+	
+		let unreadCount = parseInt($('.notifications-icon .unread-count').text()) || 0;
+		if (unreadCount > 0) {
+			$('.notifications-icon .unread-count').text(unreadCount - unreadCount);
+			if (unreadCount - unreadCount === 0) {
+				$('.notifications-icon .unread-count').hide();
+			}
+		}
 	}
+	
 
 	setup_dropdown_events() {
 		this.dropdown.on("hide.bs.dropdown", (e) => {
