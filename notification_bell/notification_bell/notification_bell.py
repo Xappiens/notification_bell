@@ -1,11 +1,10 @@
+import frappe
+
 @frappe.whitelist()
 def get_notification_logs(limit=20):
     # Si el usuario es Administrator, puede ver todas las notificaciones
-    if frappe.session.user == "Administrator":
-        filters = {}
-    else:
-        # Filtrar solo las notificaciones del usuario actual
-        filters = {"for_user": frappe.session.user}
+
+    filters = {"for_user": frappe.session.user}
 
     # Obtener las notificaciones basadas en el filtro
     notification_logs = frappe.db.get_list(

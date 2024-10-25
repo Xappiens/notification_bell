@@ -389,7 +389,7 @@ class NotificationsView extends BaseNotificationsView {
 
     get_notifications_list(limit) {
         return frappe.call(
-            "frappe.desk.doctype.notification_log.notification_log.get_notification_logs",
+            "notification_bell.notification_bell.notification_bell.get_notification_logs",
             { limit: limit }
         );
     }
