@@ -245,3 +245,7 @@ app_license = "mit"
 app_include_js = ["/assets/notification_bell/js/notification_bell.js"]
 
 doctype_js = {"Notification Log" : "/public/js/notification_log.js"}
+
+override_whitelisted_methods = {
+    "frappe.desk.doctype.notification_log.notification_log.get_notification_logs": "notification_bell.notification_bell.notification_bell.get_notification_logs"
+}
